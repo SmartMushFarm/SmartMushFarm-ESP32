@@ -33,9 +33,11 @@ bool sht30Ok = false;
 // 1 MOSFET điều khiển 2 quạt
 // 1 MOSFET điều khiển 2 sưởi
 // 1 MOSFET điều khiển 2 phun sương
+// 1 MOSFET điều khiển đèn
 const int FAN_PIN = 25;
 const int HEATER_PIN = 26;
 const int MIST_PIN = 27;
+const int LIGHT_PIN = 33;
 
 // Nếu MOSFET module bật bằng HIGH thì để true.
 // Nếu module của mày bật bằng LOW thì đổi thành false.
@@ -45,6 +47,7 @@ const bool ACTIVE_HIGH = true;
 bool fanStatus = false;
 bool heaterStatus = false;
 bool mistStatus = false;
+bool lightStatus = false;
 
 // ===== TIMER =====
 unsigned long lastSend = 0;
@@ -80,16 +83,23 @@ void setMist(bool state) {
   mistStatus = state;
 }
 
+void setLight(bool state) {
+  writeOutput(LIGHT_PIN, state);
+  lightStatus = state;
+}
+
 void turnAllOff() {
   setFan(false);
   setHeater(false);
   setMist(false);
+  setLight(false);
 }
 
 void turnAllOn() {
   setFan(true);
   setHeater(true);
   setMist(true);
+  setLight(true);
 }
 
 // ===== WIFI SETUP =====
@@ -199,7 +209,10 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   } 
   else if (device == "mist") {
     setMist(state);
-  } 
+  }
+  else if (device == "light") {
+    setLight(state);
+  }
   else if (device == "all") {
     if (state) {
       turnAllOn();
@@ -270,6 +283,7 @@ void publishStatus(String eventType) {
   output["fan"] = fanStatus;
   output["heater"] = heaterStatus;
   output["mist"] = mistStatus;
+  output["light"] = lightStatus;
 
   char buffer[512];
   serializeJson(doc, buffer);
@@ -305,6 +319,7 @@ void publishSensorData() {
   output["fan"] = fanStatus;
   output["heater"] = heaterStatus;
   output["mist"] = mistStatus;
+  output["light"] = lightStatus;
 
   char buffer[512];
   serializeJson(doc, buffer);
@@ -340,6 +355,7 @@ void setup() {
   pinMode(FAN_PIN, OUTPUT);
   pinMode(HEATER_PIN, OUTPUT);
   pinMode(MIST_PIN, OUTPUT);
+  pinMode(LIGHT_PIN, OUTPUT);
 
   // Khi khởi động thì tắt hết để an toàn
   turnAllOff();
